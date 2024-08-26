@@ -9,7 +9,8 @@ path = "lib.rs"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
+pyo3-commonize = { path = "../../", version = "0.1.0" }
 
 [dependencies.pyo3]
-version = "0.22"
+version = "=0.22.2"
 features = ["extension-module", "macros"]

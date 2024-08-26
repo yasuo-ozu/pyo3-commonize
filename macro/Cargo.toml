@@ -1,5 +1,5 @@
 [package]
-name = "pyo3-commonize"
+name = "pyo3-commonize-macro"
 version = "0.1.0"
 edition = "2021"
 description = "Generate zerocost sumtype of iterators or closures"
@@ -8,18 +8,14 @@ repository = "https://github.com/yasuo-ozu/sumtype"
 license = "MIT"
 
 [lib]
+proc-macro = true
 path = "lib.rs"
 
 [dependencies]
-pyo3-commonize-macro = { path = "macro", version = "0.1.0" }
+proc-macro2 = "1.0"
+template-quote = "0.4"
+proc-macro-error = "1.0"
 
-[dependencies.pyo3]
-version = "=0.22.2"
-[workspace]
-members = [
-	".",
-	"macro",
-	"examples/acceptor",
-	"examples/donor",
-]
-resolver = "2"
+[dependencies.syn]
+version = "2.0"
+features = [ "full", "derive", "printing", "extra-traits"]
