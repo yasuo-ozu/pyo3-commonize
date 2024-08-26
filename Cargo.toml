@@ -2,10 +2,12 @@
 name = "pyo3-commonize"
 version = "0.1.0"
 edition = "2021"
-description = "Generate zerocost sumtype of iterators or closures"
+description = "Allow PyO3 classes to be passed between different PyO3 crates"
 authors = ["Yasuo Ozu <yasuo@ozu.email>"]
-repository = "https://github.com/yasuo-ozu/sumtype"
+repository = "https://github.com/yasuo-ozu/pyo3-commonize"
 license = "MIT"
+categories = ["api-bindings", "development-tools::ffi"]
+keywords = ["pyo3", "python", "cpython", "ffi"]
 
 [lib]
 path = "lib.rs"

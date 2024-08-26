@@ -9,6 +9,7 @@ use std::ffi::OsStr;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::Path;
 
+/// Marker trait implemented by `#[derive(Commonized)] macro. See [`commonize()`]`
 pub unsafe trait Commonized: PyClass {
     #[doc(hidden)]
     const __COMMONIZED_INTERNAL_TAG: usize;
@@ -134,6 +135,19 @@ fn find_type_object(
     Ok(None)
 }
 
+/// ```
+/// use pyo3::prelude::*;
+/// use pyo3_commonize::{Commonized, commonize};
+/// #[derive(Commonized)]
+/// #[pyclass]
+/// struct MyClass;
+///
+/// #[pymodule]
+/// fn my_module(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
+///     commonize::<MyClass>(py)?;  //< should be called at first
+///     m.add_class::<MyClass>()
+/// }
+/// ```
 pub fn commonize<T: Commonized>(py: Python<'_>) -> PyResult<()> {
     let tag = generate_final_tag::<T>();
     if let Some(type_object) = find_type_object(py, tag, || {
