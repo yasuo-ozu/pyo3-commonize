@@ -1,0 +1,15 @@
+[package]
+name = "acceptor"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "lib.rs"
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+
+[dependencies.pyo3]
+version = "0.22"
+features = ["extension-module", "macros"]

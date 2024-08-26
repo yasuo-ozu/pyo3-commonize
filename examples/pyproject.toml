@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "examples"
+version = "0.1.0"
+license = "MIT"
+authors = []
+description = ""
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+acceptor = {path = "./acceptor", develop = true}
+donor = {path = "./donor", develop = true}
+
+[tool.poetry.group.dev.dependencies]
+maturin = "1.7.0"

@@ -1,0 +1,16 @@
+[package]
+name = "pyo3-commonize"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+[workspace]
+members = [
+	".",
+	"examples/acceptor",
+	"examples/donor",
+]
+resolver = "2"
