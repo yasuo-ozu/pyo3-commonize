@@ -21,6 +21,9 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
     - run: |
         cd examples
         make test
