@@ -26,6 +26,7 @@ pub fn derive_commonized(input: TokenStream1) -> TokenStream1 {
         unsafe impl #impl_generics ::pyo3_commonize::Commonized for #ident #ty_generics #where_clause {
             const __COMMONIZED_INTERNAL_TAG: usize = #tag;
             const __COMMONIZED_MODPATH: &'static str = ::core::module_path!();
+            const __COMMONIZED_MANIFEST_DIR: &'static str = env!("CARGO_MANIFEST_DIR");
         }
     }
     .into()

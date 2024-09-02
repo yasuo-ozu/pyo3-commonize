@@ -1,8 +1,9 @@
 use pyo3::prelude::*;
 use pyo3_commonize::{commonize, Commonized};
+//
 
 #[pyclass]
-#[derive(Commonized)]
+#[derive(Commonized, Clone, Debug, PartialEq)]
 pub struct MyClass;
 
 #[pyfunction]
@@ -14,3 +15,4 @@ fn acceptor(py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(accept, &m)?)?;
     Ok(())
 }
+//hello

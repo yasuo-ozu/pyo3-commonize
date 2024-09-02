@@ -14,9 +14,12 @@ path = "lib.rs"
 
 [dependencies]
 pyo3-commonize-macro = { path = "macro", version = "0.1.0" }
+cargo = "0.81.0"
+walkdir = "2.5.0"
 
 [dependencies.pyo3]
 version = "=0.22.2"
+
 [workspace]
 members = [
 	".",
