@@ -9,6 +9,12 @@
 
 Using this crate, the classes defined using #[pyclass] can be passed between multiple Python native extensions built with PyO3.
 
+## ABI safetyness
+
+When using this crate, it is essential to pay strict attention to ABI compatibility. To define ABI-compatible classes, it is recommended to use crates like abi_stable. (In the future, this crate may require the implementation of `abi_stable::StableAbi`.)
+
+To mitigate this issue, pyo3-commonize checks the following points: the last modified date of the source code for the specified crate and all of its dependency crates, as well as the build environment (target and host versions, Rust flags, optimization levels, etc.).
+
 ## Quick setup
 
 Example to pass `MyClass` class defined in `acceptor` crate from `donor` to `acceptor`.

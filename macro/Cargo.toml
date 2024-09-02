@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-commonize-macro"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Allow PyO3 classes to be passed between different PyO3 crates"
 authors = ["Yasuo Ozu <yasuo@ozu.email>"]
