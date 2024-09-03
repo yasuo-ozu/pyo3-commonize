@@ -5,10 +5,7 @@ use pyo3::prelude::*;
 use pyo3::pyclass::PyClass;
 use pyo3::types::{PyDict, PyType};
 pub use pyo3_commonize_macro::Commonized;
-use std::collections::BTreeSet;
-use std::ffi::OsStr;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::path::{Path, PathBuf};
 
 /// Marker trait implemented by `#[derive(Commonized)] macro. See [`commonize()`]`
 pub unsafe trait Commonized: PyClass {
@@ -20,93 +17,20 @@ pub unsafe trait Commonized: PyClass {
     const __COMMONIZED_MANIFEST_DIR: &'static str;
 }
 
-fn process_module_path(module_path: &str, hasher: &mut impl Hasher) -> Option<()> {
-    let module_name = &module_path[..module_path.find("::").unwrap_or(module_path.len())];
-    let mut base_dir = Path::new(std::env!("COMMONIZE_OUT_DIR"))
-        .parent()?
-        .parent()?
-        .parent()?
-        .to_owned();
-    base_dir.push("deps");
-    let entries = std::fs::read_dir(&base_dir)
-        .ok()?
-        .collect::<Result<Vec<_>, _>>()
-        .ok()?;
-    let mut entries = entries
-        .into_iter()
-        .filter(|entry| {
-            let path = entry.path();
-            path.extension() == Some(&OsStr::new("d"))
-                && path
-                    .iter()
-                    .last()
-                    .and_then(|s| s.to_str())
-                    .map(|s| s.starts_with(&format!("{}-", module_name)))
-                    == Some(true)
-        })
-        .collect::<Vec<_>>();
-    entries.sort_by(|lhs, rhs| {
-        let ltime = lhs.metadata().unwrap().modified().unwrap();
-        let rtime = rhs.metadata().unwrap().modified().unwrap();
-        ltime.cmp(&rtime)
-    });
-    entries.iter().last()?.path().iter().last()?.hash(hasher);
-    Some(())
-}
-
-fn get_modified_of_dir(path: &Path) -> Option<std::time::SystemTime> {
-    let mut times: Vec<_> = walkdir::WalkDir::new(path)
-        .max_depth(20)
-        .into_iter()
-        .filter_map(|entry| {
-            let entry = entry.unwrap();
-            if entry.path().extension() == Some(OsStr::new("rs")) {
-                Some(entry)
-            } else {
-                None
-            }
-        })
-        .map(|entry| entry.metadata().unwrap().modified().unwrap())
-        .collect();
-    times.sort();
-    if times.len() > 0 {
-        Some(times[times.len() - 1])
-    } else {
-        None
-    }
-}
-
 fn hash_env(hasher: &mut impl Hasher) {
     env!("COMMONIZE_ENV").hash(hasher);
 }
 
-fn hash_cargo_deps(manifest_path: &Path, module_name: &str, hasher: &mut impl Hasher) {
-    let context = cargo::util::context::GlobalContext::default().unwrap();
-    let workspace = cargo::core::Workspace::new(manifest_path, &context)
-        .unwrap_or_else(|e| panic!("Cannot load manifest for {:?}: {}", &manifest_path, e));
-    let (packages, resolve) = cargo::ops::resolve_ws(&workspace).unwrap();
-    let mut unresolved_deps = packages
-        .package_ids()
-        .filter(|id| id.name().as_str() == module_name)
-        .collect::<BTreeSet<_>>();
-    if unresolved_deps.len() != 1 {
-        panic!("Cannot find root package, count of exactly one.");
-    }
-    let mut resolved_deps = BTreeSet::new();
-    while unresolved_deps.len() > 0 {
-        let ret = unresolved_deps
-            .iter()
-            .map(|d| resolve.deps(d.clone()).map(|(a, _)| a))
-            .flatten()
-            .collect::<BTreeSet<_>>();
-        resolved_deps.extend(&unresolved_deps);
-        unresolved_deps = ret.difference(&resolved_deps).cloned().collect();
-    }
-    for d in resolved_deps {
-        let package = packages.get_one(d).unwrap();
-        let modified = get_modified_of_dir(package.root()).unwrap();
-        d.name().as_str().hash(hasher);
-        modified.hash(hasher);
+fn hash_cargo_deps(module_name: &str, hasher: &mut impl Hasher) {
+    if let &[object] = std::env!("COMMONIZE_MODULE_STATE_TAG")
+        .split(",")
+        .filter(|s| s.starts_with(&format!("{}:", module_name)))
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        object.hash(hasher);
+    } else {
+        panic!("Cannot collect module state for {}", module_name);
     }
 }
 
@@ -115,11 +39,9 @@ fn get_module_name(module_path: &str) -> &str {
 }
 
 fn generate_final_tag<T: Commonized>() -> usize {
-    let mut hasher = DefaultHasher::new();
     let module_name = get_module_name(T::__COMMONIZED_MODPATH);
-    let mut manifest_path = PathBuf::from(T::__COMMONIZED_MANIFEST_DIR);
-    manifest_path.push("Cargo.toml");
-    hash_cargo_deps(manifest_path.as_ref(), module_name, &mut hasher);
+    let mut hasher = DefaultHasher::new();
+    hash_cargo_deps(module_name, &mut hasher);
     hash_env(&mut hasher);
     T::__COMMONIZED_INTERNAL_TAG.hash(&mut hasher);
     hasher.finish() as usize

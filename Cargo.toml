@@ -12,10 +12,11 @@ keywords = ["pyo3", "python", "cpython", "ffi"]
 [lib]
 path = "lib.rs"
 
+[build-dependencies]
+cargo = "0.81.0"
+
 [dependencies]
 pyo3-commonize-macro = { path = "macro", version = "0.1.1" }
-cargo = "0.81.0"
-walkdir = "2.5.0"
 
 [dependencies.pyo3]
 version = "=0.22.2"
