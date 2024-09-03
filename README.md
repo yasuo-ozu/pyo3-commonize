@@ -3,7 +3,7 @@
 [Latest Version]: https://img.shields.io/crates/v/pyo3-commonize.svg
 [crates.io]: https://crates.io/crates/pyo3-commonize
 [Documentation]: https://img.shields.io/docsrs/pyo3-commonize
-[docs.rs]: https://docs.rs/sumtype/latest/pyo3-commonize/
+[docs.rs]: https://docs.rs/pyo3-commonize/latest/pyo3-commonize/
 [GitHub Actions]: https://github.com/yasuo-ozu/pyo3-commonize/actions/workflows/rust.yml/badge.svg
 [actions]: https://github.com/yasuo-ozu/pyo3-commonize/actions/workflows/rust.yml
 
