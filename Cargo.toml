@@ -1,6 +1,6 @@
 [package]
 name = "pyo3-commonize"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Allow PyO3 classes to be passed between different PyO3 crates"
 authors = ["Yasuo Ozu <yasuo@ozu.email>"]
@@ -16,7 +16,7 @@ path = "lib.rs"
 cargo = "0.81.0"
 
 [dependencies]
-pyo3-commonize-macro = { path = "macro", version = "0.1.1" }
+pyo3-commonize-macro = { path = "macro", version = "0.1.2" }
 
 [dependencies.pyo3]
 version = "=0.22.2"
