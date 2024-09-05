@@ -9,13 +9,12 @@ use std::path::{Path, PathBuf};
 
 // Get manifest path on project root. Not equal to "CARGO_MANIFEST_DIR/Cargo.toml".
 fn get_root_manifest_path() -> Option<PathBuf> {
-    let mut base_dir = Path::new(std::env::var("OUT_DIR").unwrap().as_str())
-        .parent()?
-        .parent()?
-        .parent()?
-        .parent()?
-        .parent()?
-        .to_owned();
+    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let mut base_dir = Path::new(out_dir.as_str());
+    while !base_dir.ends_with("target") {
+        base_dir = base_dir.parent()?;
+    }
+    let mut base_dir = base_dir.parent()?.to_owned();
     base_dir.push("Cargo.toml");
     Some(base_dir)
 }
@@ -78,8 +77,9 @@ fn generate_state_tag_dict() -> HashMap<String, u64> {
     let manifest_path = get_root_manifest_path().expect("Cannot find root manifest");
     dbg!(&manifest_path);
     let context = cargo::util::context::GlobalContext::default().unwrap();
-    let workspace = cargo::core::Workspace::new(&manifest_path, &context)
+    let mut workspace = cargo::core::Workspace::new(&manifest_path, &context)
         .unwrap_or_else(|e| panic!("Cannot load manifest for {:?}: {}", &manifest_path, e));
+    workspace.set_ignore_lock(true);
     let (package_set, resolve) = cargo::ops::resolve_ws(&workspace).unwrap();
     get_candidate_packages(&package_set)
         .unwrap()
