@@ -1,7 +1,10 @@
 use cargo::core::package::{Package, PackageSet};
 use cargo::core::package_id::PackageId;
 use cargo::core::resolver::Resolve;
+use cargo::sources::path::PathSource;
+use cargo::util::context::GlobalContext;
 use cargo::util::errors::CargoResult;
+use filetime::FileTime;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -52,21 +55,56 @@ fn resolve_deps(pid: PackageId, resolve: &Resolve) -> BTreeSet<PackageId> {
     resolved_deps
 }
 
+fn generate_fingerprint_of_root_package(pkg: &Package, gctx: &GlobalContext) -> Option<String> {
+    let source_id = pkg.package_id().source_id();
+    let path = source_id.local_path()?;
+    let path_source = PathSource::new(path.as_path(), source_id, gctx);
+    let mut max = FileTime::zero();
+    let mut max_path = PathBuf::new();
+    for file in path_source.list_files(pkg).ok()? {
+        match file.extension().map(|s| s.to_str().unwrap()) {
+            Some("pyd") | Some("pyc") | Some("pyi") | Some("so") | Some("dylib") => {
+                // It seems not affect on representation of Rust types
+                continue;
+            }
+            _ => {
+                let mtime = std::fs::metadata(&file)
+                    .map(|m| FileTime::from_last_modification_time(&m))
+                    .unwrap_or_else(|_| FileTime::zero());
+                if mtime > max {
+                    max = mtime;
+                    max_path = file;
+                }
+            }
+        }
+    }
+    Some(format!("{} ({})", max, max_path.display()))
+}
+
 fn generate_state_tag_for_package(
     package_set: &PackageSet,
     pid: PackageId,
     resolve: &Resolve,
+    gctx: &GlobalContext,
 ) -> u64 {
     let mut hasher = DefaultHasher::new();
     let source_map = package_set.sources();
     for d in resolve_deps(pid, resolve) {
         let source_id = d.source_id();
         let package = package_set.get_one(d).unwrap();
-        let fingerprint = source_map
-            .get(source_id)
-            .unwrap()
-            .fingerprint(package)
-            .unwrap();
+        let base_fingerprint = if &pid == &d {
+            // root package
+            generate_fingerprint_of_root_package(package, gctx)
+        } else {
+            None
+        };
+        let fingerprint = base_fingerprint.unwrap_or_else(|| {
+            source_map
+                .get(source_id)
+                .unwrap()
+                .fingerprint(package)
+                .unwrap()
+        });
         d.name().as_str().hash(&mut hasher);
         fingerprint.hash(&mut hasher);
     }
@@ -87,7 +125,7 @@ fn generate_state_tag_dict() -> HashMap<String, u64> {
         .map(|p| {
             (
                 p.name().as_str().to_owned(),
-                generate_state_tag_for_package(&package_set, p.package_id(), &resolve),
+                generate_state_tag_for_package(&package_set, p.package_id(), &resolve, &context),
             )
         })
         .collect()

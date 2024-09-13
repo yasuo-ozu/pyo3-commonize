@@ -14,6 +14,7 @@ path = "lib.rs"
 
 [build-dependencies]
 cargo = "0.81.0"
+filetime = "*"
 
 [dependencies]
 pyo3-commonize-macro = { path = "macro", version = "0.1.3" }
