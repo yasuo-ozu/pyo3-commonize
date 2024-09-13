@@ -111,15 +111,15 @@ fn generate_state_tag_for_package(
     hasher.finish()
 }
 
-fn generate_state_tag_dict() -> HashMap<String, u64> {
-    let manifest_path = get_root_manifest_path().expect("Cannot find root manifest");
-    dbg!(&manifest_path);
-    let context = cargo::util::context::GlobalContext::default().unwrap();
+fn generate_state_tag_dict() -> Result<HashMap<String, u64>, String> {
+    let manifest_path = get_root_manifest_path().ok_or("Cannot find root manifest")?;
+    let context = cargo::util::context::GlobalContext::default().map_err(|e| format!("{}", e))?;
     let mut workspace = cargo::core::Workspace::new(&manifest_path, &context)
-        .unwrap_or_else(|e| panic!("Cannot load manifest for {:?}: {}", &manifest_path, e));
+        .map_err(|e| format!("Cannot load manifest for {:?}: {}", &manifest_path, e))?;
     workspace.set_ignore_lock(true);
-    let (package_set, resolve) = cargo::ops::resolve_ws(&workspace).unwrap();
-    get_candidate_packages(&package_set)
+    let (package_set, resolve) =
+        cargo::ops::resolve_ws(&workspace).map_err(|e| format!("{}", e))?;
+    Ok(get_candidate_packages(&package_set)
         .unwrap()
         .into_iter()
         .map(|p| {
@@ -128,7 +128,7 @@ fn generate_state_tag_dict() -> HashMap<String, u64> {
                 generate_state_tag_for_package(&package_set, p.package_id(), &resolve, &context),
             )
         })
-        .collect()
+        .collect())
 }
 
 fn main() {
@@ -143,14 +143,20 @@ fn main() {
         std::env::var("OPT_LEVEL").unwrap_or("".to_owned()),
         std::env::var("CARGO_ENCODED_RUSTFLAGS").unwrap_or("".to_owned())
     );
-    let dict = generate_state_tag_dict();
-    let s = dict
-        .iter()
-        .map(|(package_name, tag)| {
-            let modname = package_name.replace("-", "_");
-            format!("{}:{}", modname, tag)
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-    println!("cargo::rustc-env=COMMONIZE_MODULE_STATE_TAG={}", s);
+    match generate_state_tag_dict() {
+        Ok(dict) => {
+            let s = dict
+                .iter()
+                .map(|(package_name, tag)| {
+                    let modname = package_name.replace("-", "_");
+                    format!("{}:{}", modname, tag)
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            println!("cargo::rustc-env=COMMONIZE_MODULE_STATE_TAG={}", s);
+        }
+        Err(e) => {
+            println!("cargo::rustc-env=COMMONIZE_MODULE_STATE_TAG=ERROR: {}", e);
+        }
+    }
 }

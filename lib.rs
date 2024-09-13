@@ -22,7 +22,11 @@ fn hash_env(hasher: &mut impl Hasher) {
 }
 
 fn hash_cargo_deps(module_name: &str, hasher: &mut impl Hasher) {
-    if let &[object] = std::env!("COMMONIZE_MODULE_STATE_TAG")
+    let state_tag = std::env!("COMMONIZE_MODULE_STATE_TAG");
+    if state_tag.starts_with("ERROR: ") {
+        panic!("{}", state_tag);
+    }
+    if let &[object] = state_tag
         .split(",")
         .filter(|s| s.starts_with(&format!("{}:", module_name)))
         .collect::<Vec<_>>()
